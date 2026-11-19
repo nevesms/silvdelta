@@ -1,0 +1,35 @@
+Package: silvdelta
+Title: Structural Change Detection in Forests from Bi-Temporal Point Clouds
+Version: 0.2.1
+Authors@R:
+    person("Mateus", "Sobrenome", email = "seu.email@exemplo.com",
+           role = c("aut", "cre"))
+Description: A methodological pipeline to detect and quantify structural
+    changes in forest stands from two point clouds of the same area acquired
+    before (t0) and after (t1) a management intervention such as pruning or
+    thinning. Provides co-registration of epochs on stable structures, a
+    common terrain model, stem detection with or without user seeds,
+    voxel-based change detection with a registration-aware tolerance,
+    individual-tree and area-based change metrics, rule-based classification
+    of the intervention and calibration of removed biomass against field data.
+    Works with terrestrial, mobile (SLAM) and UAV laser scanning clouds.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Depends:
+    R (>= 4.1.0)
+Imports:
+    data.table (>= 1.14.0),
+    RANN,
+    dbscan,
+    stats,
+    utils,
+    methods,
+    tools,
+    graphics,
+    grDevices
+Suggests:
+    lidR,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
