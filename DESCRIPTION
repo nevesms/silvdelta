@@ -2,7 +2,7 @@ Package: silvdelta
 Title: Structural Change Detection in Forests from Bi-Temporal Point Clouds
 Version: 0.2.1
 Authors@R:
-    person("Mateus", "Sobrenome", email = "seu.email@exemplo.com",
+    person("Mateus", "dos Santos Neves", email = "nevesms@users.noreply.github.com",
            role = c("aut", "cre"))
 Description: A methodological pipeline to detect and quantify structural
     changes in forest stands from two point clouds of the same area acquired
