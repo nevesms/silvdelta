@@ -18,6 +18,8 @@ silvdelta(
   clip = TRUE,
   clip_buffer = 0,
   plot_frame = FALSE,
+  plot_trees = c("inside", "all"),
+  neighbors = TRUE,
   stem_args = list(),
   register_args = list(),
   target_args = list(),
@@ -57,6 +59,16 @@ targets) or the convex hull of the t0 cloud.}
 \item{plot_frame}{Express the results in the local plot frame defined by
 the targets (see \code{\link[=target_plot]{target_plot()}})?}
 
+\item{plot_trees}{\code{"inside"} (default): only trees whose stem lies inside
+the target polygon are evaluated and counted per hectare (area of the
+polygon without buffer); trees in the buffer are still used to share
+space in the segmentation, so their crowns are not attributed to plot
+trees. \code{"all"}: every tree in the clipped clouds is evaluated.}
+
+\item{neighbors}{With \code{seeds}, also detect the stems that are not seeded
+(trees around the plot) and use them as neighbours in the
+segmentation. They are returned in \verb{$neighbors}, not in \verb{$trees}.}
+
 \item{stem_args, register_args, target_args, voxel_args, operation_args}{Named lists of further arguments for \code{\link[=detect_stems]{detect_stems()}},
 \code{\link[=register_epochs]{register_epochs()}}, \code{\link[=register_targets]{register_targets()}}, \code{\link[=voxel_change]{voxel_change()}} and
 \code{\link[=classify_operation]{classify_operation()}}.}
@@ -68,7 +80,8 @@ An object of class \code{silvdelta}: a list with \code{level}, \code{epochs},
 \code{stems} (t0), \code{trees} (per-tree change; at area level the output of
 \code{\link[=match_trees]{match_trees()}}), \code{voxels} (tree level only), \code{stand}, \code{grid},
 \code{profile}, \code{operation} (\code{\link[=classify_operation]{classify_operation()}}), \code{plot} (target plot
-geometry, if any), \code{area_ha} and \code{registration}.
+geometry, if any), \code{neighbors} (trees outside the plot used only for
+segmentation), \code{area_ha} and \code{registration}.
 }
 \description{
 Wrapper that chains the steps of the package. Every step can also be run

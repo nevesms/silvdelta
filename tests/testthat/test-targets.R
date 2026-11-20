@@ -60,3 +60,21 @@ test_that("results can be expressed in the plot frame", {
   expect_gte(min(res$plot$polygon$Y), -0.05)
   expect_true(all(res$trees$change == "pruned"))
 })
+
+test_that("only trees with the stem inside the plot are evaluated; buffer trees are neighbours", {
+  set.seed(31)
+  sim <- simulate_stand(nx = 5, ny = 4, intervention = "pruning", rotation = 0,
+                        offset = c(0, 0, 0), seed = 31)
+  zt <- function(x, y) 0.05 * x + 0.02 * y + 0.05 * sin(x / 3) + 1.35
+  tg <- data.table::data.table(X = c(4.5, 13.5, 13.5, 4.5), Y = c(3, 3, 7, 7))
+  tg[, Z := zt(X, Y)]
+  inside <- sim$truth[X > 4.5 & X < 13.5 & Y > 3 & Y < 7]$tree_id
+  res <- suppressWarnings(silvdelta(sim, seeds = sim$seeds[tree_id %in% inside], registration = "targets",
+                   target_args = list(targets_t0 = tg, targets_t1 = tg, refine = FALSE),
+                   clip_buffer = 2, verbose = FALSE))
+  expect_equal(sort(res$trees$tree_id), sort(inside))
+  expect_gt(nrow(res$neighbors), 0)
+  expect_equal(res$stand$n_t0, length(inside))
+  expect_equal(res$area_ha, 9 * 4 / 1e4)
+  expect_true(all(res$trees$change == "pruned"))
+})

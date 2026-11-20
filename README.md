@@ -101,6 +101,17 @@ Os pontos dos alvos e das hastes são removidos antes das análises. Se o seu
 arquivo não tiver intensidade, informe os centros dos alvos manualmente em
 `register_targets(targets_t0 = , targets_t1 = )`.
 
+### Buffer e árvores da parcela
+
+Com `clip_buffer > 0`, as nuvens são recortadas além dos vértices para que as
+copas das árvores de borda venham inteiras. Com `plot_trees = "inside"`
+(padrão), só são avaliadas as árvores cujo **fuste** está dentro do polígono
+dos vértices. As árvores do buffer entram apenas como vizinhas na
+segmentação, para que a copa delas não seja atribuída às árvores da parcela,
+e saem em `res$neighbors`. As métricas por hectare, a grade e o perfil vertical
+usam o polígono sem buffer. Com sementes, os fustes não semeados são
+detectados automaticamente como vizinhos (`neighbors = TRUE`).
+
 ## Identificação da operação
 
 `res$operation` traz a decisão e todas as métricas usadas:

@@ -38,5 +38,5 @@ utils::globalVariables(c(
   "new_tree", "height_t0", "occupancy_t1", "L", "zw", "az", "inc", "tt",
   "rr", "jit", "base", "bx", "by", "bz", "rw", "branch",
   "Intensity", "target_id", "intensity", "id_t0", "residual", "cl2", "row",
-  "volume_t0", "volume_t1", "operation", "thinning_type"
+  "volume_t0", "volume_t1", "operation", "thinning_type", "in_plot"
 ))

@@ -27,7 +27,7 @@ thinning and its type, clearcut).
 }
 }
 \author{
-\strong{Maintainer}: Mateus Sobrenome \email{seu.email@exemplo.com}
+\strong{Maintainer}: Mateus dos Santos Neves \email{nevesms@users.noreply.github.com}
 
 }
 \keyword{internal}

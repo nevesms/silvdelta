@@ -40,6 +40,14 @@
 #' @param grid Cell size (m) for [grid_change()].
 #' @param clip Clip the epochs to the target polygon?
 #' @param clip_buffer Buffer (m) added to the target polygon before clipping.
+#' @param plot_trees `"inside"` (default): only trees whose stem lies inside
+#'   the target polygon are evaluated and counted per hectare (area of the
+#'   polygon without buffer); trees in the buffer are still used to share
+#'   space in the segmentation, so their crowns are not attributed to plot
+#'   trees. `"all"`: every tree in the clipped clouds is evaluated.
+#' @param neighbors With `seeds`, also detect the stems that are not seeded
+#'   (trees around the plot) and use them as neighbours in the
+#'   segmentation. They are returned in `$neighbors`, not in `$trees`.
 #' @param plot_frame Express the results in the local plot frame defined by
 #'   the targets (see [target_plot()])?
 #' @param stem_args,register_args,target_args,voxel_args,operation_args
@@ -51,7 +59,8 @@
 #'   `stems` (t0), `trees` (per-tree change; at area level the output of
 #'   [match_trees()]), `voxels` (tree level only), `stand`, `grid`,
 #'   `profile`, `operation` ([classify_operation()]), `plot` (target plot
-#'   geometry, if any), `area_ha` and `registration`.
+#'   geometry, if any), `neighbors` (trees outside the plot used only for
+#'   segmentation), `area_ha` and `registration`.
 #' @examples
 #' \donttest{
 #' sim <- simulate_stand(nx = 3, ny = 2, seed = 1)
@@ -64,11 +73,14 @@ silvdelta <- function(t0, t1 = NULL, seeds = NULL, level = c("tree", "area"),
                        registration = c("icp", "targets", "none"), normalize = TRUE,
                        voxel = 0.05, max_radius = Inf, area_ha = NULL, grid = 1,
                        clip = TRUE, clip_buffer = 0, plot_frame = FALSE,
+                       plot_trees = c("inside", "all"), neighbors = TRUE,
                        stem_args = list(), register_args = list(),
                        target_args = list(), voxel_args = list(),
                        operation_args = list(), verbose = TRUE) {
   level <- match.arg(level)
   registration <- match.arg(registration)
+  plot_trees <- match.arg(plot_trees)
+  user_area <- !is.null(area_ha)
   say <- function(...) if (verbose) message(...)
   ep <- if (inherits(t0, "epochs")) t0 else epochs(t0, t1)
   ep <- structure(ep[intersect(names(ep), c("t0", "t1", "registration", "ground",
@@ -115,7 +127,23 @@ silvdelta <- function(t0, t1 = NULL, seeds = NULL, level = c("tree", "area"),
   say("[3/6] Detecting stems in t0", if (is.null(seeds)) " (automatic)" else " (seeded)")
   stems <- do.call(detect_stems, c(list(cloud = ep$t0, seeds = seeds), stem_args))
   if (nrow(stems) == 0L) stop("No stems detected in t0; adjust 'stem_args' or give seeds.")
-  say(sprintf("      %d trees (%d with DBH)", nrow(stems), sum(stems$found)))
+  poly <- if (plot_trees == "inside" && !is.null(geom$polygon)) geom$polygon else NULL
+  if (!is.null(poly) && !is.null(seeds) && neighbors) {
+    sa <- stem_args; sa$seed_radius <- NULL
+    auto <- do.call(detect_stems, c(list(cloud = ep$t0), sa))
+    if (nrow(auto)) {
+      dd <- RANN::nn2(as.matrix(stems[, .(X, Y)]), as.matrix(auto[, .(X, Y)]), k = 1)$nn.dists[, 1]
+      nb <- auto[dd > 0.5]
+      if (nrow(nb)) {
+        nb[, tree_id := as.integer(max(stems$tree_id) + 1000L + seq_len(.N))]
+        stems[, tree_id := as.integer(tree_id)]
+        stems <- rbind(stems, nb[, names(stems), with = FALSE])
+      }
+    }
+  }
+  stems[, in_plot := if (is.null(poly)) TRUE else .pip(X, Y, poly$X, poly$Y)]
+  say(sprintf("      %d trees (%d with DBH); %d inside the plot", nrow(stems),
+              sum(stems$found), sum(stems$in_plot)))
 
   vc <- NULL
   if (level == "tree") {
@@ -135,10 +163,18 @@ silvdelta <- function(t0, t1 = NULL, seeds = NULL, level = c("tree", "area"),
     trees[which(still), status := "kept"]
   }
   say("[5/6] Stand summary, grid and vertical profile")
+  trees[, in_plot := if (is.null(poly)) TRUE else .pip(X, Y, poly$X, poly$Y)]
+  nbr <- trees[in_plot == FALSE]
+  trees <- trees[in_plot == TRUE]
+  ep_in <- ep
+  if (!is.null(poly)) {
+    ep_in <- clip_epochs(ep, poly, 0)
+    if (!user_area) area_ha <- .poly_area(poly$X, poly$Y) / 1e4
+  }
   out <- list(level = level, epochs = ep, stems = stems, trees = trees, voxels = vc,
               stand = stand_change(trees, area_ha),
-              grid = grid_change(ep, res = grid),
-              profile = vertical_profile(ep), plot = geom,
+              grid = grid_change(ep_in, res = grid),
+              profile = vertical_profile(ep_in), plot = geom, neighbors = nbr,
               area_ha = area_ha, registration = ep$registration)
   say("[6/6] Identifying the operation")
   out$operation <- do.call(classify_operation, c(list(x = out), operation_args))
@@ -161,6 +197,8 @@ print.silvdelta <- function(x, ...) {
     cat(sprintf("  OPERATION: %s%s\n", op$operation,
                 if (is.na(op$thinning_type)) "" else paste0(" (", op$thinning_type, ")")))
   s <- x$stand
+  if (!is.null(x$neighbors) && nrow(x$neighbors))
+    cat(sprintf("  %d trees outside the plot used only as neighbours\n", nrow(x$neighbors)))
   cat(sprintf("  trees: %d in t0, %d in t1 (%d removed)\n", s$n_t0, s$n_t1, s$n_removed))
   cat(sprintf("  density: %.0f -> %.0f trees/ha | basal area: %.1f -> %.1f m2/ha\n",
               s$N_ha_t0, s$N_ha_t1, s$G_ha_t0, s$G_ha_t1))
