@@ -11,7 +11,9 @@
 #' @param cloud A point cloud with an `Intensity` column (see [as_cloud()]).
 #' @param threshold Intensity threshold. Default: `median + k_mad * MAD` of
 #'   the cloud intensity, which adapts to sensors with different intensity
-#'   scales and to differences between surveys.
+#'   scales and to differences between surveys, capped at the 99.99th
+#'   percentile so that sensors whose intensity saturates (e.g. 8-bit,
+#'   maximum 255) still find the targets at the saturation value.
 #' @param k_mad Multiplier of the MAD for the automatic threshold.
 #' @param eps Grouping distance (m) between bright points of the same target.
 #' @param min_points Minimum number of bright points in a target.
@@ -28,7 +30,11 @@ detect_targets <- function(cloud, threshold = NULL, k_mad = 8, eps = 0.1,
     stop("The cloud has no intensity values; target detection needs them. ",
          "See the 'intensity' argument of as_cloud().")
   I <- cloud$Intensity
-  if (is.null(threshold)) threshold <- median(I) + k_mad * stats::mad(I)
+  if (is.null(threshold)) {
+    threshold <- median(I) + k_mad * stats::mad(I)
+    # 8/16-bit sensors saturate: retro-reflective returns sit at the maximum
+    threshold <- min(threshold, stats::quantile(I, 0.9999, names = FALSE))
+  }
   empty <- data.table::data.table(target_id = integer(), X = numeric(), Y = numeric(),
                                   Z = numeric(), n = integer(), size = numeric(),
                                   intensity = numeric())

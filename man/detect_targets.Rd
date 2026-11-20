@@ -19,7 +19,9 @@ detect_targets(
 
 \item{threshold}{Intensity threshold. Default: \code{median + k_mad * MAD} of
 the cloud intensity, which adapts to sensors with different intensity
-scales and to differences between surveys.}
+scales and to differences between surveys, capped at the 99.99th
+percentile so that sensors whose intensity saturates (e.g. 8-bit,
+maximum 255) still find the targets at the saturation value.}
 
 \item{k_mad}{Multiplier of the MAD for the automatic threshold.}
 
