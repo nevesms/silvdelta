@@ -21,7 +21,7 @@ as_cloud <- function(x, intensity = NULL) {
         stop("Reading LAS/LAZ files requires the 'lidR' package.")
       x <- lidR::readLAS(x, select = "xyzi")
     } else {
-      x <- data.table::fread(x)
+      x <- data.table::fread(file = x)
     }
   }
   if (inherits(x, "LAS")) x <- methods::slot(x, "data")

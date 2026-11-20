@@ -10,7 +10,10 @@
 #' @return A `data.table` with `tree_id`, `X`, `Y`.
 #' @export
 as_seeds <- function(x) {
-  if (is.character(x) && length(x) == 1L) x <- data.table::fread(x)
+  if (is.character(x) && length(x) == 1L) {
+    if (!file.exists(x)) stop("Seed file not found: ", x)
+    x <- data.table::fread(file = x)
+  }
   if (is.matrix(x)) x <- data.table::as.data.table(x)
   x <- data.table::as.data.table(x)
   nm <- toupper(names(x))
